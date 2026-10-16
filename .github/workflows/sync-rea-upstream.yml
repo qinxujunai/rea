@@ -1,0 +1,37 @@
+name: Sync REA from upstream
+
+on:
+  schedule:
+    # Daily at 03:37 UTC (11:37 Beijing time).
+    - cron: '37 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-rea-upstream
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.repository == 'qinxujunai/rea'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out fork
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Merge new upstream changes without overwriting fork history
+        shell: bash
+        run: |
+          set -euo pipefail
+          git remote add upstream https://github.com/morluto/rea.git
+          git fetch upstream main
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git merge --no-edit upstream/main
+          git push origin HEAD:main
