@@ -27,8 +27,13 @@ jobs:
         run: |
           set -euo pipefail
           for workflow in ci.yml ci-timings.yml mutation.yml release.yml; do
-            echo "Disabling ${workflow} in ${GITHUB_REPOSITORY}"
-            gh api --method PUT "repos/${GITHUB_REPOSITORY}/actions/workflows/${workflow}/disable"
+            state=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/${workflow}" --jq '.state')
+            if [[ "$state" == "active" ]]; then
+              echo "Disabling ${workflow} in ${GITHUB_REPOSITORY}"
+              gh api --method PUT "repos/${GITHUB_REPOSITORY}/actions/workflows/${workflow}/disable"
+            else
+              echo "Already ${state}: ${workflow}"
+            fi
           done
           echo "Disabled upstream CI, CI timings, mutation tests, and Release."
           for workflow in ci.yml ci-timings.yml mutation.yml release.yml; do
